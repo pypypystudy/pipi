@@ -1,6 +1,7 @@
 #include "string.h"
 #include "KAES.h"
 
+//constructor
 KAES::KAES()
 {
 	
