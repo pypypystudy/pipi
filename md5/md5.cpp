@@ -42,7 +42,6 @@
  These notices must be retained in any copies of any part of this
  documentation and/or software.
 */
-
 #include "md5.h"
 
 
@@ -68,11 +67,8 @@ void MD5_CTX::MD5Init ()
  this->state[3] = 0x10325476;
  /* Add by Liguangyi */
  MD5_memset(PADDING, 0, sizeof(PADDING));
- *PADDING=0x80;
- //PADDING = {
- // 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- // 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+ unsigned char Temp_pad[56] = {0x80, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 0x40, 00, 00, 00, 00, 00, 00, 00};
+ MD5_memcpy(PADDING, Temp_pad, 56);
 }
 
 /* MD5 block update operation. Continues an MD5 message-digest
