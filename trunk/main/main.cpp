@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdlib.h>
+#include   <winsock2.h> 
 #include "../base64/base64.h"
 #include "pipi.h"
 
@@ -46,15 +47,28 @@ int main(int argc, char *argv[])
 	{
 	  addr_out += 2;
 	}
+
+	cout<<addr_out<<endl;
   }
 
   //NEED TO DO: check addr_out is a correct addr
+
+  //NEED TO DO: the input address may be not encode by BASE64, maybe is normal address,
+  //                    these address should be support later.
 
 
   /********************************************/
   //2.CREATE CONNECTION
   /********************************************/
-  //call function
+  //create socket
+  int sockfd;
+  struct sockaddr_in serv_addr;
+  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+  { 
+    cout<<"create socket error!"<<endl;
+    return RC_ERROR;
+  }
+
   
   
   system("PAUSE");	
