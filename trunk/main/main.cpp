@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
-#include   <winsock2.h> 
+#include <netinet/in.h> 
+#include <sys/socket.h>
 #include "../base64/base64.h"
 #include "pipi.h"
 
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
   //2.CREATE CONNECTION
   /********************************************/
   //create socket
+  
   int sockfd;
   struct sockaddr_in serv_addr;
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -68,8 +70,6 @@ int main(int argc, char *argv[])
     cout<<"create socket error!"<<endl;
     return RC_ERROR;
   }
-
-  
   
   system("PAUSE");	
   return 0;

@@ -1,1 +1,1 @@
-d:\Dev-Cpp\bin\make.exe clean
+D:/cygwin/bin/make.exe clean
