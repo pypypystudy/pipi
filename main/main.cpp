@@ -62,14 +62,27 @@ int main(int argc, char *argv[])
   //2.CREATE CONNECTION
   /********************************************/
   //create socket
-  
-  int sockfd;
-  struct sockaddr_in serv_addr;
+  int sockfd; 
   if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
   { 
     cout<<"create socket error!"<<endl;
     return RC_ERROR;
   }
+
+  //connect socket
+  struct sockaddr_in serv_addr;  
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_port = htons(SERVPORT);
+  serv_addr.sin_addr.s_addr = 0x3AFE2706;//58.254.39.6
+  bzero(&(serv_addr.sin_zero), 8);
+  
+  if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr)) == -1)
+  {
+    cout<<"connect socket error!"<<endl;
+    return RC_ERROR;
+  }
+
+  cout<<"connect socket success!"<<endl;
   
   system("PAUSE");	
   return 0;
