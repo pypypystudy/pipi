@@ -1,1 +1,1 @@
-d:\Dev-Cpp\bin\make.exe all
+D:/cygwin/bin/make.exe all

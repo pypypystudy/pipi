@@ -1,8 +1,8 @@
 # obj: main.o
 # Create by pipi
 
-CPL  = d:/Dev-Cpp/bin/
-BIN  = pipi.exe
+CPL  = D:/cygwin/bin/
+BIN  = pipi
 CPP  = $(CPL)g++.exe
 RM = rm -f
 

@@ -1,13 +1,10 @@
 # obj: main.o
 # Create by pipi
 
-CPL  = d:/Dev-Cpp/bin/
+CPL  = D:/cygwin/bin/
 CPP  = $(CPL)g++.exe
-ACXXFLAGS =  -I"d:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  \
-            -I"d:/Dev-Cpp/include/c++/3.4.2/backward"  \
-            -I"d:/Dev-Cpp/include/c++/3.4.2/mingw32"  \
-            -I"d:/Dev-Cpp/include/c++/3.4.2"  \
-            -I"d:/Dev-Cpp/include" 
+ACXXFLAGS =  -I"D:/cygwin/lib/gcc/i686-pc-cygwin/3.4.4"\
+            -I"D:/cygwin/usr/include" 
 
 main.o: main/main.cpp main/pipi.h
-	$(CPP) -c main/main.cpp -o obj/main.o $(ACXXFLAGS)
+	$(CPP) -c main/main.cpp -o obj/main.o
