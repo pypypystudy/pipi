@@ -1,7 +1,8 @@
 #include <iostream>
 #include <stdlib.h>
-#include <netinet/in.h> 
 #include <sys/socket.h>
+#include <netinet/in.h>   
+#include <arpa/inet.h>
 #include "../base64/base64.h"
 #include "pipi.h"
 
@@ -73,9 +74,9 @@ int main(int argc, char *argv[])
   struct sockaddr_in serv_addr;  
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons(SERVPORT);
-  serv_addr.sin_addr.s_addr = 0x3AFE2706;//58.254.39.6
+  serv_addr.sin_addr.s_addr = inet_addr(SERVIP);
   bzero(&(serv_addr.sin_zero), 8);
-  
+
   if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr)) == -1)
   {
     cout<<"connect socket error!"<<endl;
@@ -83,7 +84,9 @@ int main(int argc, char *argv[])
   }
 
   cout<<"connect socket success!"<<endl;
-  
-  system("PAUSE");	
+
+  close(sockfd);
+  cout<<"close sockfd success!"<<endl;
+  //system("PAUSE");	
   return 0;
 }
