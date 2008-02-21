@@ -2,4 +2,5 @@
 #define RC_SUCCESS 0
 #define SERVPORT 80
 #define SERVIP "58.254.39.6"
+#define RESOURCE_FILE "pipi.resrc"
 unsigned char recv_constant[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};

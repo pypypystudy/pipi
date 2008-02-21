@@ -276,16 +276,3 @@ void MD5_CTX::MD5_memset (unsigned char* output,int value,unsigned int len)
   ((char *)output)[i] = (char)value;
 }
 
-int main()
-{
-	MD5_CTX md5;
-	unsigned char key[8] = {0x34, 0, 0, 0, 0x82, 0, 0, 0};
-	unsigned char output[16] = {0};
-	md5.MD5Update(key, 8);
-	md5.MD5Final(output);
-	for (int i=0; i<16; i++)
-	{
-		printf("%02x ", output[i]);
-	}
-	return 0;
-}

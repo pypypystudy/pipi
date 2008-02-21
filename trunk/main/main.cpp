@@ -1,9 +1,13 @@
 #include <iostream>
 #include <stdlib.h>
+
 #include <sys/socket.h>
 #include <netinet/in.h>   
 #include <arpa/inet.h>
+#include <fstream>
+
 #include "../base64/base64.h"
+#include "../md5/md5.h"
 #include "pipi.h"
 
 using namespace std;
@@ -82,9 +86,20 @@ int main(int argc, char *argv[])
     cout<<"connect socket error!"<<endl;
     return RC_ERROR;
   }
-  cout<<"connect socket success!"<<endl;
 
-  //send a fake request
+  //repare for parse protocol: 
+  //open pipi.resrc for save resource list
+  //claculate md5 as aes key
+  ofstream resource_file;
+  resource_file.open(RESOURCE_FILE, ios::binary);
+
+  unsigned char md5_key[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
+  unsigned char aes_key[16] = {0};
+  MD5_CTX md5;
+  md5.MD5Update(md5_key, 8);
+  md5.MD5Final(aes_key);
+  
+  //send a fake request packet
   char msg[282] = {
       0x50, 0x4F, 0x53, 0x54, 0x20, 0x2F, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2F, 0x31, 0x2E, 0x31, 0x0D,
       0x0A, 0x48, 0x6F, 0x73, 0x74, 0x3A, 0x20, 0x35, 0x38, 0x2E, 0x32, 0x35, 0x34, 0x2E, 0x33, 0x39,
@@ -110,6 +125,7 @@ int main(int argc, char *argv[])
   {
     cout<<"send msg error!"<<endl;
     close(sockfd);
+    resource_file.close();
     return RC_ERROR;
   }
 
@@ -125,6 +141,7 @@ int main(int argc, char *argv[])
     {
       cout<<"recv msg error!"<<endl;
       close(sockfd);
+      resource_file.close();
       return RC_ERROR;
     }
 
@@ -159,9 +176,13 @@ int main(int argc, char *argv[])
     {
       cout<<"send resp error!"<<endl;
       close(sockfd);
+      resource_file.close();
       return RC_ERROR;
     }    
   }
+
+  //save resource list finish
+  resource_file.close();
 
   close(sockfd);
   //system("PAUSE");	
