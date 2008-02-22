@@ -1,7 +1,17 @@
+#include <iostream>
+#include <stdlib.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>   
+#include <arpa/inet.h>
+
+#include <fstream>
+
 #define RC_ERROR 1
 #define RC_SUCCESS 0
 #define SERVPORT 80
 #define SERVIP "58.254.39.6"
+#define RECV_TEMP_FILE "temp.resrc"
 #define RESOURCE_FILE "pipi.resrc"
 #define RECV_CONSTANT_LENGTH 8
 #define ADDR_IN_LENGTH 128
@@ -22,6 +32,7 @@ class PP_Downloader
         int download_file();
     private:
         int compose_requestpacket(unsigned char *buffer);
+        //int decode_write_listfile(unsigned char *buffer, int size, ofstream destfile);
         
         int set_addr(unsigned char *addr_input);
         unsigned char *get_addr();

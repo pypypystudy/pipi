@@ -1,11 +1,3 @@
-#include <iostream>
-#include <stdlib.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>   
-#include <arpa/inet.h>
-#include <fstream>
-
 #include "../base64/base64.h"
 #include "../md5/md5.h"
 #include "pipi.h"
@@ -15,6 +7,7 @@ using namespace std;
 
 PP_Downloader::PP_Downloader()
 {
+    set_recv_constant();
 }
 PP_Downloader::~PP_Downloader()
 {
@@ -87,6 +80,7 @@ int PP_Downloader::parse_address()
 
 int PP_Downloader::parse_listfile()
 {
+    int rc = 0;
     //create socket
     int sockfd; 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -111,8 +105,8 @@ int PP_Downloader::parse_listfile()
     //repare for parse protocol: 
     //open pipi.resrc for save resource list
     //claculate md5 as aes key
-    ofstream resource_file;
-    resource_file.open(RESOURCE_FILE, ios::binary);
+    ofstream recv_file;
+    recv_file.open(RECV_TEMP_FILE, ios::binary);
 
     unsigned char md5_key[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
     unsigned char aes_key[16] = {0};
@@ -120,7 +114,7 @@ int PP_Downloader::parse_listfile()
     md5.MD5Update(md5_key, 8);
     md5.MD5Final(aes_key);
 
-    //send a fake request packet
+    //send a fake request packet, should be instead of compose_requestpakcet
     unsigned char msg[282] = {
       0x50, 0x4F, 0x53, 0x54, 0x20, 0x2F, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2F, 0x31, 0x2E, 0x31, 0x0D,
       0x0A, 0x48, 0x6F, 0x73, 0x74, 0x3A, 0x20, 0x35, 0x38, 0x2E, 0x32, 0x35, 0x34, 0x2E, 0x33, 0x39,
@@ -146,7 +140,7 @@ int PP_Downloader::parse_listfile()
     {
         cout<<"send msg error!"<<endl;
         close(sockfd);
-        resource_file.close();
+        recv_file.close();
         return RC_ERROR;
     }
 
@@ -156,16 +150,19 @@ int PP_Downloader::parse_listfile()
     int resp_count = 0;
     int recv_flag = 0;
     int pkt_size = 0;
+    unsigned char *recv_ptr;
     while(1)
     {
         if ((recved_count = recv(sockfd, recv_buffer, RECV_BUFFER_SIZE, 0)) == -1)
         {
             cout<<"recv msg error!"<<endl;
             close(sockfd);
-            resource_file.close();
+            recv_file.close();
             return RC_ERROR;
         }
-
+        
+        recv_ptr = recv_buffer;
+        
         //check received message
         //if recv_buffer not equal to recv_flag, continue recv from server
         if (0 == (memcmp(recv_buffer, recv_constant, RECV_CONSTANT_LENGTH)))
@@ -175,21 +172,27 @@ int PP_Downloader::parse_listfile()
             buffer_ptr += RECV_CONSTANT_LENGTH;
             pkt_size = *((int *)buffer_ptr);
             cout<<"pkt_size="<<pkt_size<<endl;
+
+            recv_ptr += FIRST_PACKET_HEAD_SIZE;
             recved_count  -= FIRST_PACKET_HEAD_SIZE;
             recv_flag = RECV_FIRST_PACKET_FLAG;//start recv packet
-         }
-
-        //process packet and save result in file
-        while((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count > 0))
-        {
-            
         }
 
         //if recv finish, exit while(1)
-        if (pkt_size - recved_count > 0)
+        if ((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count < 0))
         {
+            cout<<pkt_size - recved_count<<endl;
             break;
         }
+        
+        //process packet and save result in file
+        if((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count >= 0))
+        {
+            recv_file.write((const char *)recv_ptr, recved_count);
+            pkt_size -= recved_count;
+        }
+
+        cout<<pkt_size<<endl;
 
         //one recv, one response
         resp_count = send(sockfd, recv_resp, 0, 0);
@@ -197,17 +200,18 @@ int PP_Downloader::parse_listfile()
         {
             cout<<"send resp error!"<<endl;
             close(sockfd);
-            resource_file.close();
+            recv_file.close();
             return RC_ERROR;
         }    
     }
 
     //save resource list finish
-    resource_file.close();
     close(sockfd);
+    recv_file.close();
     
     return RC_SUCCESS;
 }
+
 int PP_Downloader::download_file()
 {
     return RC_SUCCESS;
@@ -230,6 +234,8 @@ unsigned char * PP_Downloader::get_addr()
 
 int PP_Downloader::set_recv_constant()
 {
+    unsigned char temp[] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
+    memcpy(recv_constant, temp, RECV_CONSTANT_LENGTH);
     return RC_SUCCESS;
 }
 
@@ -237,7 +243,12 @@ unsigned char * PP_Downloader::get_recv_constant()
 {
     return RC_SUCCESS;
 }
-
+/*
+int PP_Downloader::decode_write_listfile(unsigned char *buffer, int size, ofstream destfile)
+{
+    return RC_SUCCESS;
+}
+*/
 int main(int argc, char *argv[])
 {
     int rc = 0;
