@@ -1,12 +1,3 @@
-#include <iostream>
-#include <stdlib.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>   
-#include <arpa/inet.h>
-
-#include <fstream>
-
 #define RC_ERROR 1
 #define RC_SUCCESS 0
 #define SERVPORT 80
@@ -21,6 +12,8 @@
 #define RECV_BUFFER_SIZE 1460
 #define FIRST_PACKET_HEAD_SIZE 12// 3*4B = 12
 #define RECV_FIRST_PACKET_FLAG 1
+#define AES_KEY_LENGTH 16
+#define AES_DECODE_LENGTH 16
 
 class PP_Downloader
 {
@@ -32,13 +25,16 @@ class PP_Downloader
         int download_file();
     private:
         int compose_requestpacket(unsigned char *buffer);
-        //int decode_write_listfile(unsigned char *buffer, int size, ofstream destfile);
+        int decode_write_listfile();
         
         int set_addr(unsigned char *addr_input);
         unsigned char *get_addr();
         int set_recv_constant();
         unsigned char *get_recv_constant();
+        int set_aeskey(unsigned char * key);
+        unsigned char *get_aeskey();	
         
         unsigned char recv_constant[RECV_CONSTANT_LENGTH];
         unsigned char addr[ADDR_IN_LENGTH];
+        unsigned char aes_key[AES_KEY_LENGTH];
 };
