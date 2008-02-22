@@ -279,12 +279,10 @@ int PP_Downloader::decode_listfile()
 {
     ifstream input_file;
     ofstream output_file;
-    ofstream temp_file;
     int file_size;
     
     input_file.open(RECV_TEMP_FILE, ios::binary);
     output_file.open(RESOURCE_FILE);
-    temp_file.open("temp", ios::binary);
 
     //get file size
     input_file.seekg(0, ios::end);
@@ -310,18 +308,13 @@ int PP_Downloader::decode_listfile()
     unsigned char output[AES_DECODE_LENGTH] = {0};
     unsigned char *mem_ptr = decode_mem;
 
-    int a = 0;
     while(!input_file.eof())
     {
         input_file.read((char *)input, AES_DECODE_LENGTH);
         aes.InvCipher(input, output);
-        temp_file.write((char *)output, AES_DECODE_LENGTH);
         memcpy(mem_ptr, output, AES_DECODE_LENGTH);
         mem_ptr += AES_DECODE_LENGTH;
-        a += 16;
-        cout<<a<<endl;
     }
-    temp_file.close();
     mem_ptr -= AES_DECODE_LENGTH;
 
     //find useful link from decode_mem then save in pipi.resrc
@@ -331,9 +324,6 @@ int PP_Downloader::decode_listfile()
 
     curr_ptr = decode_mem;
     
-    printf("start=%p\n", decode_mem);
-    printf("end=%p\n", mem_ptr);
-
     while(curr_ptr < mem_ptr)
     {
         if ((0 == strncmp((const char *)curr_ptr, USEFUL_LINK_HTTP, USEFUL_LINK_HTTP_LENGTH))
@@ -341,9 +331,8 @@ int PP_Downloader::decode_listfile()
         {
             link_length = strlen((const char *)curr_ptr);
             output_file<<curr_ptr<<endl;
-            cout<<curr_ptr<<endl;
             curr_ptr += link_length;
-            break;
+            continue;
         }
         curr_ptr ++;
     }
@@ -351,6 +340,19 @@ int PP_Downloader::decode_listfile()
     free(decode_mem);    
     input_file.close();
     output_file.close();
+
+    //read resource file
+    /*
+    ifstream test;
+    test.open(RESOURCE_FILE);
+    unsigned char aaa[256] = {0};
+    while(!test.eof())
+    {
+        test>>aaa;
+        cout<<aaa<<endl;
+        aaa[0] = '\0';
+    }
+    */
     
     return RC_SUCCESS;
 }
