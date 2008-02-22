@@ -279,21 +279,22 @@ int PP_Downloader::decode_listfile()
 {
     ifstream input_file;
     ofstream output_file;
+    ofstream temp_file;
     int file_size;
     
     input_file.open(RECV_TEMP_FILE, ios::binary);
     output_file.open(RESOURCE_FILE);
+    temp_file.open("temp", ios::binary);
 
     //get file size
     input_file.seekg(0, ios::end);
     file_size = input_file.tellg();
     input_file.seekg(0, ios::beg);
-    //file_size = 21552;
-    //cout<<file_size<<endl;
+    file_size += FILE_SIZE_PADDING;
 
     //malloc mem save decode file
     unsigned char *decode_mem = NULL;
-    decode_mem = (unsigned char *)malloc(file_size+16);
+    decode_mem = (unsigned char *)malloc(file_size);
     if (NULL == decode_mem)
     {
         cout<<"malloc memory error."<<endl;
@@ -301,7 +302,7 @@ int PP_Downloader::decode_listfile()
         output_file.close();
         return RC_ERROR;
     }
-    memset(decode_mem, 0, file_size+16);
+    memset(decode_mem, 0, file_size);
     
     //decode file by AES into decode_mem
     KAES aes(AES_KEY_LENGTH, get_aeskey());
@@ -309,32 +310,42 @@ int PP_Downloader::decode_listfile()
     unsigned char output[AES_DECODE_LENGTH] = {0};
     unsigned char *mem_ptr = decode_mem;
 
+    int a = 0;
     while(!input_file.eof())
     {
         input_file.read((char *)input, AES_DECODE_LENGTH);
         aes.InvCipher(input, output);
-        memcpy(mem_ptr, input, AES_DECODE_LENGTH);
+        temp_file.write((char *)output, AES_DECODE_LENGTH);
+        memcpy(mem_ptr, output, AES_DECODE_LENGTH);
         mem_ptr += AES_DECODE_LENGTH;
+        a += 16;
+        cout<<a<<endl;
     }
+    temp_file.close();
     mem_ptr -= AES_DECODE_LENGTH;
 
     //find useful link from decode_mem then save in pipi.resrc
     //now mem_ptr is the end of mem
+    unsigned char *curr_ptr = NULL;
     int link_length = 0;
 
+    curr_ptr = decode_mem;
+    
     printf("start=%p\n", decode_mem);
     printf("end=%p\n", mem_ptr);
-    while(decode_mem < mem_ptr)
+
+    while(curr_ptr < mem_ptr)
     {
-        if ((0 == strncmp((const char *)decode_mem, USEFUL_LINK_HTTP, USEFUL_LINK_HTTP_LENGTH))
-            || (0 == strncmp((const char *)decode_mem, USEFUL_LINK_FTP, USEFUL_LINK_FTP_LENGTH)))
+        if ((0 == strncmp((const char *)curr_ptr, USEFUL_LINK_HTTP, USEFUL_LINK_HTTP_LENGTH))
+            || (0 == strncmp((const char *)curr_ptr, USEFUL_LINK_FTP, USEFUL_LINK_FTP_LENGTH)))
         {
-            link_length = strlen((const char *)decode_mem);
-            output_file<<decode_mem<<endl;
-            decode_mem += link_length;
+            link_length = strlen((const char *)curr_ptr);
+            output_file<<curr_ptr<<endl;
+            cout<<curr_ptr<<endl;
+            curr_ptr += link_length;
             break;
         }
-        decode_mem += USEFUL_LINK_HTTP_LENGTH;
+        curr_ptr ++;
     }
     
     free(decode_mem);    
