@@ -10,97 +10,118 @@
 #include "../md5/md5.h"
 #include "pipi.h"
 
+
 using namespace std;
 
-int main(int argc, char *argv[])
+PP_Downloader::PP_Downloader()
 {
-  int rc;
+}
+PP_Downloader::~PP_Downloader()
+{
+}
 
-  /********************************************/
-  //1.ADDRESS PROCESS
-  /********************************************/
-  //input download addr
-  char addr_input[128], *addr_in;
-  cout<<"Please input the download addr:"<<endl;
-  cin>>addr_input;
-  addr_in = addr_input;
-  //check addr head is  'thunder://'
-  if (0 == strncmp(addr_input, "thunder://", 10))
-  {
-      addr_in += 10;
-  }
-   
-  //translate addr
-  char addr_output[128], *addr_out;
-  Base64 base64;
-  rc = base64.decode(addr_in, addr_output);
-  if (RC_SUCCESS != rc)
-  {
-    cout<<"error occur!"<<endl;
-	return RC_ERROR;
-  }
+/********************************************/
+//1.ADDRESS PROCESS
+/********************************************/
+int PP_Downloader::parse_address()
+{
+    int rc = 0;
+    
+    //input download addr
+    unsigned char addr_input[128] = {0};
+    unsigned char *addr_in;
+    cout<<"Please input the download addr:"<<endl;
+    cin>>addr_input;
+    
+    //check length
+    int len = strlen((const char *)addr_input);
+    if (ADDR_MAX_LENGTH < len)
+    {
+        cout<<"address length beyond the maxium length."<<endl;
+        return RC_ERROR;
+    }
+    
+    //check addr head is  'thunder://', if begin with it need decode by BASE64
+    addr_in = addr_input;
+    unsigned char addr_output[128] = {0};
+    unsigned char *addr_out;
+    if (0 == strncmp((const char *)addr_input, (const char *)ADDR_BASE64_HEAD, \
+                                ADDR_BASE64_HEAD_LENGTH))
+    {
+        addr_in += ADDR_BASE64_HEAD_LENGTH;        
+        Base64 base64;
+        rc = base64.decode(addr_in, addr_output);
+        if (RC_SUCCESS != rc)
+        {
+            cout<<"base64.decode error."<<endl;
+            return RC_ERROR;
+        }
+        //check addr head is "AA", and tail is "ZZ"
+        int len = strlen((const char *)addr_output);
+        addr_out = addr_output + (len - 2);
+        if (0 == strncmp((const char *)addr_out, (const char *)"ZZ", 2))
+        {
+            *addr_out = '\0';
+        }
+        addr_out = addr_output;
+        if (0 == strncmp((const char *)addr_out, (const char *)"AA", 2))
+        {
+            addr_out += 2;
+        }
+        cout<<addr_out<<endl;
+    }
+    
+    //should process other type addr here
 
-  //check addr head is "AA", and tail is "ZZ"
-  {
-  	int len = strlen(addr_output);
-	addr_out = addr_output + (len - 2);
-	if (0 == strncmp(addr_out, "ZZ", 2))
-	{
-	  *addr_out = '\0';
-	}
-	addr_out = addr_output;
-	if (0 == strncmp(addr_out, "AA", 2))
-	{
-	  addr_out += 2;
-	}
 
-	cout<<addr_out<<endl;
-  }
+    //save in private variable
+    rc = set_addr(addr_out);
+    if (RC_SUCCESS != rc)
+    {
+        cout<<"set addr error."<<endl;
+        return RC_ERROR;
+    }
+    
+    return RC_SUCCESS;
+}
 
-  //NEED TO DO: check addr_out is a correct addr
+int PP_Downloader::parse_listfile()
+{
+    //create socket
+    int sockfd; 
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    { 
+        cout<<"create socket error!"<<endl;
+        return RC_ERROR;
+    }
 
-  //NEED TO DO: the input address may be not encode by BASE64, maybe is normal address,
-  //                    these address should be support later.
+    //connect socket
+    struct sockaddr_in serv_addr;  
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(SERVPORT);
+    serv_addr.sin_addr.s_addr = inet_addr(SERVIP);
+    bzero(&(serv_addr.sin_zero), 8);
 
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr)) == -1)
+    {
+        cout<<"connect socket error!"<<endl;
+        return RC_ERROR;
+    }
 
-  /********************************************/
-  //2.CREATE CONNECTION
-  /********************************************/
-  //create socket
-  int sockfd; 
-  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-  { 
-    cout<<"create socket error!"<<endl;
-    return RC_ERROR;
-  }
+    //repare for parse protocol: 
+    //open pipi.resrc for save resource list
+    //claculate md5 as aes key
+    ofstream resource_file;
+    resource_file.open(RESOURCE_FILE, ios::binary);
 
-  //connect socket
-  struct sockaddr_in serv_addr;  
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(SERVPORT);
-  serv_addr.sin_addr.s_addr = inet_addr(SERVIP);
-  bzero(&(serv_addr.sin_zero), 8);
+    unsigned char md5_key[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
+    unsigned char aes_key[16] = {0};
+    MD5_CTX md5;
+    md5.MD5Update(md5_key, 8);
+    md5.MD5Final(aes_key);
 
-  if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr)) == -1)
-  {
-    cout<<"connect socket error!"<<endl;
-    return RC_ERROR;
-  }
-
-  //repare for parse protocol: 
-  //open pipi.resrc for save resource list
-  //claculate md5 as aes key
-  ofstream resource_file;
-  resource_file.open(RESOURCE_FILE, ios::binary);
-
-  unsigned char md5_key[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
-  unsigned char aes_key[16] = {0};
-  MD5_CTX md5;
-  md5.MD5Update(md5_key, 8);
-  md5.MD5Final(aes_key);
-  
-  //send a fake request packet
-  char msg[282] = {
+    //send a fake request packet
+    unsigned char msg[282] = {
       0x50, 0x4F, 0x53, 0x54, 0x20, 0x2F, 0x20, 0x48, 0x54, 0x54, 0x50, 0x2F, 0x31, 0x2E, 0x31, 0x0D,
       0x0A, 0x48, 0x6F, 0x73, 0x74, 0x3A, 0x20, 0x35, 0x38, 0x2E, 0x32, 0x35, 0x34, 0x2E, 0x33, 0x39,
       0x2E, 0x36, 0x3A, 0x38, 0x30, 0x0D, 0x0A, 0x43, 0x6F, 0x6E, 0x74, 0x65, 0x6E, 0x74, 0x2D, 0x74,
@@ -119,72 +140,129 @@ int main(int argc, char *argv[])
       0x38, 0x94, 0x2C, 0xB7, 0x3C, 0xD2, 0x46, 0xE0, 0x98, 0xC2, 0x13, 0x54, 0x14, 0xBC, 0x64, 0xCA,
       0x43, 0xF2, 0xB6, 0x70, 0xAF, 0x5A, 0xF1, 0x08, 0xCF, 0x8E, 0xA8, 0x95, 0xF5, 0xCE, 0xFA, 0x8D,
       0xC5, 0xA1, 0x5C, 0xA3, 0x53, 0x98, 0x87, 0xC0, 0x05, 0x15};
-  int sent_count = 0;
-  sent_count = send(sockfd, msg, 282, 0);
-  if (282 != sent_count)
-  {
-    cout<<"send msg error!"<<endl;
-    close(sockfd);
+    int sent_count = 0;
+    sent_count = send(sockfd, msg, 282, 0);
+    if (282 != sent_count)
+    {
+        cout<<"send msg error!"<<endl;
+        close(sockfd);
+        resource_file.close();
+        return RC_ERROR;
+    }
+
+    int recved_count = 0;
+    unsigned char recv_buffer[RECV_BUFFER_SIZE] = {0};
+    unsigned char recv_resp[1] = {0};
+    int resp_count = 0;
+    int recv_flag = 0;
+    int pkt_size = 0;
+    while(1)
+    {
+        if ((recved_count = recv(sockfd, recv_buffer, RECV_BUFFER_SIZE, 0)) == -1)
+        {
+            cout<<"recv msg error!"<<endl;
+            close(sockfd);
+            resource_file.close();
+            return RC_ERROR;
+        }
+
+        //check received message
+        //if recv_buffer not equal to recv_flag, continue recv from server
+        if (0 == (memcmp(recv_buffer, recv_constant, RECV_CONSTANT_LENGTH)))
+        {
+            //get packet size
+            unsigned char *buffer_ptr = recv_buffer;
+            buffer_ptr += RECV_CONSTANT_LENGTH;
+            pkt_size = *((int *)buffer_ptr);
+            cout<<"pkt_size="<<pkt_size<<endl;
+            recved_count  -= FIRST_PACKET_HEAD_SIZE;
+            recv_flag = RECV_FIRST_PACKET_FLAG;//start recv packet
+         }
+
+        //process packet and save result in file
+        while((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count > 0))
+        {
+            
+        }
+
+        //if recv finish, exit while(1)
+        if (pkt_size - recved_count > 0)
+        {
+            break;
+        }
+
+        //one recv, one response
+        resp_count = send(sockfd, recv_resp, 0, 0);
+        if (-1 == sent_count)
+        {
+            cout<<"send resp error!"<<endl;
+            close(sockfd);
+            resource_file.close();
+            return RC_ERROR;
+        }    
+    }
+
+    //save resource list finish
     resource_file.close();
-    return RC_ERROR;
-  }
+    close(sockfd);
+    
+    return RC_SUCCESS;
+}
+int PP_Downloader::download_file()
+{
+    return RC_SUCCESS;
+}
 
-  int recved_count = 0;
-  unsigned char recv_buffer[1460] = {0};
-  unsigned char recv_resp[1] = {0};
-  int resp_count = 0;
-  int recv_flag = 0;
-  int pkt_size = 0;
-  while(1)
-  {
-    if ((recved_count = recv(sockfd, recv_buffer, 1460, 0)) == -1)
+int PP_Downloader::compose_requestpacket(unsigned char *buffer)
+{
+    return RC_SUCCESS;
+}
+
+int PP_Downloader::set_addr(unsigned char *addr_input)  
+{
+    return RC_SUCCESS;
+}
+
+unsigned char * PP_Downloader::get_addr()
+{
+    return RC_SUCCESS;
+}
+
+int PP_Downloader::set_recv_constant()
+{
+    return RC_SUCCESS;
+}
+
+unsigned char * PP_Downloader::get_recv_constant()
+{
+    return RC_SUCCESS;
+}
+
+int main(int argc, char *argv[])
+{
+    int rc = 0;
+    PP_Downloader pipi;
+    
+    rc = pipi.parse_address();
+    if (RC_SUCCESS != rc)
     {
-      cout<<"recv msg error!"<<endl;
-      close(sockfd);
-      resource_file.close();
-      return RC_ERROR;
+        cout<<"parse_address error."<<endl;
+        return RC_ERROR;
+    }
+    
+    rc = pipi.parse_listfile();
+    if (RC_SUCCESS != rc)
+    {
+        cout<<"parse_listfile error."<<endl;
+        return RC_ERROR;
     }
 
-    //check received message
-    //if recv_buffer not equal to recv_flag, continue recv from server
-    if (0 == (memcmp(recv_buffer, recv_constant, 8)))
+    rc = pipi.download_file();
+    if (RC_SUCCESS != rc)
     {
-        //get packet size
-        unsigned char *buffer_ptr = recv_buffer;
-        buffer_ptr += 8;
-        pkt_size = *((int *)buffer_ptr);
-        cout<<"pkt_size="<<pkt_size<<endl;
-        recved_count  -= 12;
-        recv_flag = 1;//start recv packet
-     }
-
-    //process packet and save result in file
-    while((1 == recv_flag) && (pkt_size - recved_count > 0))
-    {
-        
+        cout<<"download_file error."<<endl;
+        return RC_ERROR;
     }
-
-    //if recv finish, exit while(1)
-    if (pkt_size - recved_count > 0)
-    {
-        break;
-    }
-
-    //one recv, one response
-    resp_count = send(sockfd, recv_resp, 0, 0);
-    if (-1 == sent_count)
-    {
-      cout<<"send resp error!"<<endl;
-      close(sockfd);
-      resource_file.close();
-      return RC_ERROR;
-    }    
-  }
-
-  //save resource list finish
-  resource_file.close();
-
-  close(sockfd);
-  //system("PAUSE");	
-  return 0;
+     
+    return 0;
 }

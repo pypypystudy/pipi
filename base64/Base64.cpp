@@ -11,25 +11,25 @@ using namespace std;
 
 Base64::Base64()
 {
-    char beta[65] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 
-                     'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 
-                     'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
-                     'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 
-                     'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 
-                     'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
-                     'w', 'x', 'y', 'z', '0', '1', '2', '3', 
-                     '4', '5', '6', '7', '8', '9', '+', '/', 
-                     '='};
+    unsigned char beta[65] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 
+                                               'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 
+                                               'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 
+                                               'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 
+                                               'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 
+                                               'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
+                                               'w', 'x', 'y', 'z', '0', '1', '2', '3', 
+                                               '4', '5', '6', '7', '8', '9', '+', '/', 
+                                               '='};
     memcpy(alpha, beta, 65);
 };
 
 Base64::~Base64()
 {};
 
-int Base64::encode(char *src, char *dest)
+int Base64::encode(unsigned char *src, unsigned char *dest)
 {
     //check dest_len
-    int src_len = strlen(src);
+    int src_len = strlen((const char *)src);
     int pad_num = src_len % 3;
     if (0 != pad_num)
     {
@@ -66,10 +66,10 @@ int Base64::encode(char *src, char *dest)
     return RC_SUCCESS;
 };
 
-int Base64::decode(char *src, char *dest)
+int Base64::decode(unsigned char *src, unsigned char *dest)
 {
     //check source length
-    int src_len = strlen(src);
+    int src_len = strlen((const char *)src);
     if (0 != src_len % 4)
     {
         cout<<"error srouce length!"<<endl;
@@ -93,7 +93,7 @@ int Base64::decode(char *src, char *dest)
     return RC_SUCCESS;
 };
 
-int Base64::encode_process(char *src, char *dest, int pad_num)
+int Base64::encode_process(unsigned char *src, unsigned char *dest, int pad_num)
 {
     //construct 
     
@@ -156,7 +156,7 @@ int Base64::encode_process(char *src, char *dest, int pad_num)
     return RC_SUCCESS;
 }
 
-int Base64::alpha_revert(char src)
+int Base64::alpha_revert(unsigned char src)
 {
     int i = 0;
     while (i < 65 && src != alpha[i])
@@ -166,7 +166,7 @@ int Base64::alpha_revert(char src)
     return i;
 }
 
-int Base64::decode_process(char *src, char *dest)
+int Base64::decode_process(unsigned char *src, unsigned char *dest)
 {
     int src_tmp[4];
     for (int i=0; i<4; i++)
