@@ -18,6 +18,7 @@
 #define USEFUL_LINK_HTTP_LENGTH 7
 #define USEFUL_LINK_FTP "ftp://"
 #define USEFUL_LINK_FTP_LENGTH 6
+#define FILE_SIZE_PADDING 16//why?????
 
 class PP_Downloader
 {
