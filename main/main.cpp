@@ -1,5 +1,15 @@
+#include <iostream>
+#include <stdlib.h>
+
+#include <sys/socket.h>
+#include <netinet/in.h>   
+#include <arpa/inet.h>
+
+#include <fstream>
+
 #include "../base64/base64.h"
 #include "../md5/md5.h"
+#include "../aes/kaes.h"
 #include "pipi.h"
 
 
@@ -105,14 +115,15 @@ int PP_Downloader::parse_listfile()
     //repare for parse protocol: 
     //open pipi.resrc for save resource list
     //claculate md5 as aes key
-    ofstream recv_file;
-    recv_file.open(RECV_TEMP_FILE, ios::binary);
+    //ofstream recv_file;
+    //recv_file.open(RECV_TEMP_FILE, ios::binary);
 
     unsigned char md5_key[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
-    unsigned char aes_key[16] = {0};
+    unsigned char key[16] = {0};
     MD5_CTX md5;
     md5.MD5Update(md5_key, 8);
-    md5.MD5Final(aes_key);
+    md5.MD5Final(key);
+    set_aeskey(key);
 
     //send a fake request packet, should be instead of compose_requestpakcet
     unsigned char msg[282] = {
@@ -140,7 +151,7 @@ int PP_Downloader::parse_listfile()
     {
         cout<<"send msg error!"<<endl;
         close(sockfd);
-        recv_file.close();
+        //recv_file.close();
         return RC_ERROR;
     }
 
@@ -153,14 +164,16 @@ int PP_Downloader::parse_listfile()
     unsigned char *recv_ptr;
     while(1)
     {
+        break;//for test
+        
         if ((recved_count = recv(sockfd, recv_buffer, RECV_BUFFER_SIZE, 0)) == -1)
         {
             cout<<"recv msg error!"<<endl;
             close(sockfd);
-            recv_file.close();
+            //recv_file.close();
             return RC_ERROR;
         }
-        
+
         recv_ptr = recv_buffer;
         
         //check received message
@@ -188,11 +201,9 @@ int PP_Downloader::parse_listfile()
         //process packet and save result in file
         if((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count >= 0))
         {
-            recv_file.write((const char *)recv_ptr, recved_count);
+            //recv_file.write((const char *)recv_ptr, recved_count);
             pkt_size -= recved_count;
         }
-
-        cout<<pkt_size<<endl;
 
         //one recv, one response
         resp_count = send(sockfd, recv_resp, 0, 0);
@@ -200,14 +211,23 @@ int PP_Downloader::parse_listfile()
         {
             cout<<"send resp error!"<<endl;
             close(sockfd);
-            recv_file.close();
+            //recv_file.close();
             return RC_ERROR;
         }    
     }
 
     //save resource list finish
     close(sockfd);
-    recv_file.close();
+    //recv_file.close();
+
+    //You are here, means the coded resource list file had been save in temp.resrc
+    //now let's decode the file
+    rc = decode_write_listfile();
+    if (RC_SUCCESS != rc)
+    {
+        cout<<"decode_write_listfile error."<<endl;
+	 return RC_ERROR;
+    }
     
     return RC_SUCCESS;
 }
@@ -229,7 +249,7 @@ int PP_Downloader::set_addr(unsigned char *addr_input)
 
 unsigned char * PP_Downloader::get_addr()
 {
-    return RC_SUCCESS;
+    return addr;
 }
 
 int PP_Downloader::set_recv_constant()
@@ -241,14 +261,44 @@ int PP_Downloader::set_recv_constant()
 
 unsigned char * PP_Downloader::get_recv_constant()
 {
-    return RC_SUCCESS;
+    return recv_constant;
 }
-/*
-int PP_Downloader::decode_write_listfile(unsigned char *buffer, int size, ofstream destfile)
+
+int PP_Downloader::set_aeskey(unsigned char * key)
 {
+    memcpy(aes_key, key, 8);
     return RC_SUCCESS;
 }
-*/
+
+unsigned char * PP_Downloader::get_aeskey()
+{
+    return aes_key;
+}
+
+int PP_Downloader::decode_write_listfile()
+{
+    ifstream input_file;
+    ofstream output_file;
+    input_file.open(RECV_TEMP_FILE, ios::binary);
+    output_file.open(RESOURCE_FILE, ios::binary);
+
+    KAES aes(AES_KEY_LENGTH, get_aeskey());
+
+    unsigned char input[AES_DECODE_LENGTH] = {0};
+    unsigned char output[AES_DECODE_LENGTH] = {0};
+    while(!input_file.eof())
+    {
+        input_file.read((char *)input, AES_DECODE_LENGTH);
+        aes.InvCipher(input, output);
+        output_file.write((char *)output, AES_DECODE_LENGTH);
+    }
+
+    input_file.close();
+    output_file.close();
+    
+    return RC_SUCCESS;
+}
+
 int main(int argc, char *argv[])
 {
     int rc = 0;
