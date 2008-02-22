@@ -222,13 +222,13 @@ int PP_Downloader::parse_listfile()
 
     //You are here, means the coded resource list file had been save in temp.resrc
     //now let's decode the file
-    rc = decode_write_listfile();
+    rc = decode_listfile();
     if (RC_SUCCESS != rc)
     {
-        cout<<"decode_write_listfile error."<<endl;
+        cout<<"decode_listfile error."<<endl;
 	 return RC_ERROR;
     }
-    
+
     return RC_SUCCESS;
 }
 
@@ -266,7 +266,7 @@ unsigned char * PP_Downloader::get_recv_constant()
 
 int PP_Downloader::set_aeskey(unsigned char * key)
 {
-    memcpy(aes_key, key, 8);
+    memcpy(aes_key, key, AES_KEY_LENGTH);
     return RC_SUCCESS;
 }
 
@@ -275,24 +275,69 @@ unsigned char * PP_Downloader::get_aeskey()
     return aes_key;
 }
 
-int PP_Downloader::decode_write_listfile()
+int PP_Downloader::decode_listfile()
 {
     ifstream input_file;
     ofstream output_file;
+    int file_size;
+    
     input_file.open(RECV_TEMP_FILE, ios::binary);
-    output_file.open(RESOURCE_FILE, ios::binary);
+    output_file.open(RESOURCE_FILE);
 
+    //get file size
+    input_file.seekg(0, ios::end);
+    file_size = input_file.tellg();
+    input_file.seekg(0, ios::beg);
+    //file_size = 21552;
+    //cout<<file_size<<endl;
+
+    //malloc mem save decode file
+    unsigned char *decode_mem = NULL;
+    decode_mem = (unsigned char *)malloc(file_size+16);
+    if (NULL == decode_mem)
+    {
+        cout<<"malloc memory error."<<endl;
+        input_file.close();
+        output_file.close();
+        return RC_ERROR;
+    }
+    memset(decode_mem, 0, file_size+16);
+    
+    //decode file by AES into decode_mem
     KAES aes(AES_KEY_LENGTH, get_aeskey());
-
     unsigned char input[AES_DECODE_LENGTH] = {0};
     unsigned char output[AES_DECODE_LENGTH] = {0};
+    unsigned char *mem_ptr = decode_mem;
+
     while(!input_file.eof())
     {
         input_file.read((char *)input, AES_DECODE_LENGTH);
         aes.InvCipher(input, output);
-        output_file.write((char *)output, AES_DECODE_LENGTH);
+        memcpy(mem_ptr, input, AES_DECODE_LENGTH);
+        mem_ptr += AES_DECODE_LENGTH;
     }
+    mem_ptr -= AES_DECODE_LENGTH;
 
+    //find useful link from decode_mem then save in pipi.resrc
+    //now mem_ptr is the end of mem
+    int link_length = 0;
+
+    printf("start=%p\n", decode_mem);
+    printf("end=%p\n", mem_ptr);
+    while(decode_mem < mem_ptr)
+    {
+        if ((0 == strncmp((const char *)decode_mem, USEFUL_LINK_HTTP, USEFUL_LINK_HTTP_LENGTH))
+            || (0 == strncmp((const char *)decode_mem, USEFUL_LINK_FTP, USEFUL_LINK_FTP_LENGTH)))
+        {
+            link_length = strlen((const char *)decode_mem);
+            output_file<<decode_mem<<endl;
+            decode_mem += link_length;
+            break;
+        }
+        decode_mem += USEFUL_LINK_HTTP_LENGTH;
+    }
+    
+    free(decode_mem);    
     input_file.close();
     output_file.close();
     

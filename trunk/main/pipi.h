@@ -14,6 +14,10 @@
 #define RECV_FIRST_PACKET_FLAG 1
 #define AES_KEY_LENGTH 16
 #define AES_DECODE_LENGTH 16
+#define USEFUL_LINK_HTTP "http://"
+#define USEFUL_LINK_HTTP_LENGTH 7
+#define USEFUL_LINK_FTP "ftp://"
+#define USEFUL_LINK_FTP_LENGTH 6
 
 class PP_Downloader
 {
@@ -25,7 +29,7 @@ class PP_Downloader
         int download_file();
     private:
         int compose_requestpacket(unsigned char *buffer);
-        int decode_write_listfile();
+        int decode_listfile();
         
         int set_addr(unsigned char *addr_input);
         unsigned char *get_addr();
