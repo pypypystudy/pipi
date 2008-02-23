@@ -288,7 +288,6 @@ int PP_Downloader::decode_listfile()
     input_file.seekg(0, ios::end);
     file_size = input_file.tellg();
     input_file.seekg(0, ios::beg);
-    cout<<file_size<<endl;
 
     //malloc mem save decode file
     unsigned char *decode_mem = NULL;
