@@ -288,7 +288,7 @@ int PP_Downloader::decode_listfile()
     input_file.seekg(0, ios::end);
     file_size = input_file.tellg();
     input_file.seekg(0, ios::beg);
-    file_size += FILE_SIZE_PADDING;
+    cout<<file_size<<endl;
 
     //malloc mem save decode file
     unsigned char *decode_mem = NULL;
@@ -310,12 +310,17 @@ int PP_Downloader::decode_listfile()
 
     while(!input_file.eof())
     {
+        int read_count = 0;
         input_file.read((char *)input, AES_DECODE_LENGTH);
+        read_count = input_file.gcount();
+        if (0 == read_count)
+        {
+            break;
+        }
         aes.InvCipher(input, output);
         memcpy(mem_ptr, output, AES_DECODE_LENGTH);
         mem_ptr += AES_DECODE_LENGTH;
     }
-    mem_ptr -= AES_DECODE_LENGTH;
 
     //find useful link from decode_mem then save in pipi.resrc
     //now mem_ptr is the end of mem
@@ -340,17 +345,21 @@ int PP_Downloader::decode_listfile()
     free(decode_mem);    
     input_file.close();
     output_file.close();
-
     //read resource file
     /*
     ifstream test;
     test.open(RESOURCE_FILE);
     unsigned char aaa[256] = {0};
+    int read_count = 0;
     while(!test.eof())
     {
+        read_count = test.gcount();
+        if (0 == read_count)
+        {
+            break;
+        }
         test>>aaa;
         cout<<aaa<<endl;
-        aaa[0] = '\0';
     }
     */
     
