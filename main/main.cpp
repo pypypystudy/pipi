@@ -115,8 +115,8 @@ int PP_Downloader::parse_listfile()
     //repare for parse protocol: 
     //open pipi.resrc for save resource list
     //claculate md5 as aes key
-    //ofstream recv_file;
-    //recv_file.open(RECV_TEMP_FILE, ios::binary);
+    ofstream recv_file;
+    recv_file.open(RECV_TEMP_FILE, ios::binary);
 
     unsigned char md5_key[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
     unsigned char key[16] = {0};
@@ -151,7 +151,7 @@ int PP_Downloader::parse_listfile()
     {
         cout<<"send msg error!"<<endl;
         close(sockfd);
-        //recv_file.close();
+        recv_file.close();
         return RC_ERROR;
     }
 
@@ -164,13 +164,11 @@ int PP_Downloader::parse_listfile()
     unsigned char *recv_ptr;
     while(1)
     {
-        break;//for test
-        
         if ((recved_count = recv(sockfd, recv_buffer, RECV_BUFFER_SIZE, 0)) == -1)
         {
             cout<<"recv msg error!"<<endl;
             close(sockfd);
-            //recv_file.close();
+            recv_file.close();
             return RC_ERROR;
         }
 
@@ -184,25 +182,23 @@ int PP_Downloader::parse_listfile()
             unsigned char *buffer_ptr = recv_buffer;
             buffer_ptr += RECV_CONSTANT_LENGTH;
             pkt_size = *((int *)buffer_ptr);
-            cout<<"pkt_size="<<pkt_size<<endl;
 
             recv_ptr += FIRST_PACKET_HEAD_SIZE;
             recved_count  -= FIRST_PACKET_HEAD_SIZE;
             recv_flag = RECV_FIRST_PACKET_FLAG;//start recv packet
         }
-
-        //if recv finish, exit while(1)
-        if ((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count < 0))
-        {
-            cout<<pkt_size - recved_count<<endl;
-            break;
-        }
-        
+       
         //process packet and save result in file
         if((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count >= 0))
         {
-            //recv_file.write((const char *)recv_ptr, recved_count);
+            recv_file.write((const char *)recv_ptr, recved_count);
             pkt_size -= recved_count;
+        }
+
+        //if recv finish, exit while(1)
+        if ((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size <= 0))
+        {
+            break;
         }
 
         //one recv, one response
@@ -211,14 +207,14 @@ int PP_Downloader::parse_listfile()
         {
             cout<<"send resp error!"<<endl;
             close(sockfd);
-            //recv_file.close();
+            recv_file.close();
             return RC_ERROR;
         }    
     }
 
     //save resource list finish
     close(sockfd);
-    //recv_file.close();
+    recv_file.close();
 
     //You are here, means the coded resource list file had been save in temp.resrc
     //now let's decode the file
