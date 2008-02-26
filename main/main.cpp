@@ -162,6 +162,7 @@ int PP_Downloader::parse_listfile()
     int recv_flag = 0;
     int pkt_size = 0;
     unsigned char *recv_ptr;
+    unsigned char *recv_end;
     while(1)
     {
         if ((recved_count = recv(sockfd, recv_buffer, RECV_BUFFER_SIZE, 0)) == -1)
@@ -173,20 +174,41 @@ int PP_Downloader::parse_listfile()
         }
 
         recv_ptr = recv_buffer;
+        recv_end = recv_buffer + recved_count;
         
         //check received message
         //if recv_buffer not equal to recv_flag, continue recv from server
+        while((recv_ptr < recv_end) && (RECV_FIRST_PACKET_FLAG != recv_flag))
+        {
+            if (0 == (memcmp(recv_ptr, recv_constant, RECV_CONSTANT_LENGTH)))
+            {
+                //get packet size
+                unsigned char *buffer_ptr = recv_ptr;
+                buffer_ptr += RECV_CONSTANT_LENGTH;
+                pkt_size = *((int *)buffer_ptr);
+                cout<<pkt_size<<endl;
+
+                recv_ptr += FIRST_PACKET_HEAD_SIZE;
+                recved_count  -= recv_ptr - recv_buffer;
+                recv_flag = RECV_FIRST_PACKET_FLAG;//start recv packet
+                break;
+            }
+            recv_ptr++;
+        }
+        #if 0
         if (0 == (memcmp(recv_buffer, recv_constant, RECV_CONSTANT_LENGTH)))
         {
             //get packet size
             unsigned char *buffer_ptr = recv_buffer;
             buffer_ptr += RECV_CONSTANT_LENGTH;
             pkt_size = *((int *)buffer_ptr);
+            cout<<pkt_size<<endl;
 
             recv_ptr += FIRST_PACKET_HEAD_SIZE;
             recved_count  -= FIRST_PACKET_HEAD_SIZE;
             recv_flag = RECV_FIRST_PACKET_FLAG;//start recv packet
         }
+        #endif
        
         //process packet and save result in file
         if((RECV_FIRST_PACKET_FLAG == recv_flag) && (pkt_size - recved_count >= 0))
