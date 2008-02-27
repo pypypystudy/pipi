@@ -27,10 +27,10 @@ class PP_Downloader
         ~PP_Downloader();
         int parse_address();
         int parse_listfile();
+        int decode_listfile();
         int download_file();
     private:
         int compose_requestpacket(unsigned char *buffer);
-        int decode_listfile();
         
         int set_addr(unsigned char *addr_input);
         unsigned char *get_addr();
