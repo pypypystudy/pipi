@@ -238,15 +238,6 @@ int PP_Downloader::parse_listfile()
     close(sockfd);
     recv_file.close();
 
-    //You are here, means the coded resource list file had been save in temp.resrc
-    //now let's decode the file
-    rc = decode_listfile();
-    if (RC_SUCCESS != rc)
-    {
-        cout<<"decode_listfile error."<<endl;
-	 return RC_ERROR;
-    }
-
     return RC_SUCCESS;
 }
 
@@ -400,6 +391,13 @@ int main(int argc, char *argv[])
     {
         cout<<"parse_listfile error."<<endl;
         return RC_ERROR;
+    }
+
+    rc = pipi.decode_listfile();
+    if (RC_SUCCESS != rc)
+    {
+        cout<<"decode_listfile error."<<endl;
+	 return RC_ERROR;
     }
 
     rc = pipi.download_file();
