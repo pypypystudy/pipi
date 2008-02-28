@@ -3,7 +3,6 @@
 
 #include <fstream>
 
-#include "../base64/base64.h"
 #include "../md5/md5.h"
 #include "../aes/kaes.h"
 #include "decodepacket.h"
@@ -12,6 +11,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+
     int rc = 0;
 
     unsigned char md5_key[8] = {0x35, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00};
@@ -27,11 +27,11 @@ int main(int argc, char *argv[])
     unsigned char input[16] = {0};
     unsigned char output[16] = {0};
 
-    input_file.open("encodepacket.txt", ios::binary);
-    input_file.open("decodepacket.txt", ios::binary);
+    input_file.open("encodepacket.temp", ios::binary);
+    output_file.open("decodepacket.txt", ios::binary);
 
     int read_count = 0;
-    while (!input_file.eof())
+    while(!input_file.eof())
     {
         input_file.read((char *)input, 16);
         read_count = input_file.gcount();

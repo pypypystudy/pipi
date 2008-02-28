@@ -6,7 +6,7 @@
 #define RESOURCE_FILE "pipi.resrc"
 #define RECV_CONSTANT_LENGTH 8
 #define ADDR_IN_LENGTH 128
-#define ADDR_MAX_LENGTH 84//(128 *2)/3
+#define ADDR_MAX_LENGTH 192//(128 *3)/2
 #define ADDR_BASE64_HEAD "thunder://"
 #define ADDR_BASE64_HEAD_LENGTH 10
 #define RECV_BUFFER_SIZE 4096
@@ -18,7 +18,7 @@
 #define USEFUL_LINK_HTTP_LENGTH 7
 #define USEFUL_LINK_FTP "ftp://"
 #define USEFUL_LINK_FTP_LENGTH 6
-#define FILE_SIZE_PADDING 16//why?????
+#define COMPOSE_MAX_BUFFER_SIZE 336//336 = 126+8+4+9+4+128+55+2
 
 class PP_Downloader
 {
@@ -30,7 +30,7 @@ class PP_Downloader
         int decode_listfile();
         int download_file();
     private:
-        int compose_requestpacket(unsigned char *buffer);
+        int compose_requestpacket(unsigned char *buffer, int *length);
         
         int set_addr(unsigned char *addr_input);
         unsigned char *get_addr();
