@@ -31,6 +31,7 @@ class PP_Downloader
         int download_file();
     private:
         int compose_requestpacket(unsigned char *buffer, int *length);
+		void print_mem16(unsigned char *mem);
         
         int set_addr(unsigned char *addr_input);
         unsigned char *get_addr();
