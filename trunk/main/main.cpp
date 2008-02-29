@@ -47,7 +47,7 @@ int PP_Downloader::parse_address()
     //check addr head is  'thunder://', if begin with it need decode by BASE64
     addr_in = addr_input;
     unsigned char addr_output[128] = {0};
-    unsigned char *addr_out;
+    unsigned char *addr_out = addr_input;
     if (0 == strncmp((const char *)addr_input, (const char *)ADDR_BASE64_HEAD, \
                                 ADDR_BASE64_HEAD_LENGTH))
     {
@@ -140,8 +140,8 @@ int PP_Downloader::parse_listfile()
     }
     
     int sent_count = 0;
-    sent_count = send(sockfd, msg, 282, 0);
-    if (282 != sent_count)
+    sent_count = send(sockfd, msg, send_length, 0);
+    if (send_length != sent_count)
     {
         cout<<"send msg error!"<<endl;
         close(sockfd);
