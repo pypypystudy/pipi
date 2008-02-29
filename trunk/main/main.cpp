@@ -456,6 +456,15 @@ int PP_Downloader::decode_listfile()
     return RC_SUCCESS;
 }
 
+void PP_Downloader::print_mem16(unsigned char *mem)
+{
+    for (int i=0; i<16; i++)
+    {
+        printf("%02x ", mem[i]);
+    }
+	printf("\n");
+}
+
 int main(int argc, char *argv[])
 {
     int rc = 0;

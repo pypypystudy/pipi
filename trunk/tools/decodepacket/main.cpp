@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 
     int rc = 0;
 
-    unsigned char md5_key[8] = {0x35, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00};
+    unsigned char md5_key[8] = {0x34, 0x00, 0x00, 0x00, 0x82, 0x00, 0x00, 0x00};
     unsigned char aes_key[16] = {0};
     MD5_CTX md5;
     md5.MD5Update(md5_key, 8);
