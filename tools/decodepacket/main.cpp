@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     unsigned char input[16] = {0};
     unsigned char output[16] = {0};
 
-    input_file.open("encodepacket.temp", ios::binary);
+    input_file.open("encodepacket.txt", ios::binary);
     output_file.open("decodepacket.txt", ios::binary);
 
     int read_count = 0;
