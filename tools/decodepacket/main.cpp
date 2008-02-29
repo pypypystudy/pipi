@@ -3,8 +3,8 @@
 
 #include <fstream>
 
-#include "../md5/md5.h"
-#include "../aes/kaes.h"
+#include "../../md5/md5.h"
+#include "../../aes/kaes.h"
 #include "decodepacket.h"
 
 using namespace std;
